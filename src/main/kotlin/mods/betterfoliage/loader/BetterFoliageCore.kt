@@ -101,6 +101,7 @@ class BetterFoliageTransformer : Transformer() {
         // what: invoke code to overrule result of Block.canRenderInLayer()
         // why: allows us to render transparent quads for blocks which are only on the SOLID layer
         transformMethod(Refs.rebuildChunk) {
+            recompute = true
             find(invokeRef(Refs.renderBlock))?.replace {
                 log.info("[BetterFoliageLoader] Applying RenderChunk block render override")
                 varinsn(ALOAD, if (isOptifinePresent) 22 else 20)

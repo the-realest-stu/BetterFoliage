@@ -44,6 +44,7 @@ open class Transformer : IClassTransformer {
         if (classData == null) return null
         val classNode = ClassNode().apply { val reader = ClassReader(classData); reader.accept(this, 0) }
         var workDone = false
+        var flags = 0
 
         synchronized(this) {
             methodTransformers.forEach { (targetMethod, transform) ->
@@ -66,13 +67,19 @@ open class Transformer : IClassTransformer {
                     //}
 
                     // transform
-                    MethodTransformContext(method, namespace).transform()
+                    val ctx = MethodTransformContext(method, namespace)
+                    ctx.transform()
+
+                    if (ctx.recompute) flags = 3
+
                     workDone = true
                 }
             }
         }
 
-        return if (!workDone) classData else ClassWriter(0).apply { classNode.accept(this) }.toByteArray()
+
+
+        return if (!workDone) classData else ClassWriter(flags).apply { classNode.accept(this) }.toByteArray()
     }
 }
 
@@ -84,6 +91,8 @@ open class Transformer : IClassTransformer {
  * @param[environment] the type of environment we are in
  */
 class MethodTransformContext(val method: MethodNode, val environment: Namespace) {
+
+    var recompute = false
 
     fun makePublic() {
         method.access = (method.access or Opcodes.ACC_PUBLIC) and (Opcodes.ACC_PRIVATE or Opcodes.ACC_PROTECTED).inv()
